@@ -1,3 +1,5 @@
+import {Request, Response} from "express";
+
 require("dotenv").config({path:"../../.env"});
 const express = require("express");
 const app = express();
@@ -20,7 +22,7 @@ try {
     console.log(e)
 }
 
-app.get("/",(req,res)=>{
+app.get("/",(req:Request,res:Response)=>{
     return res.send("hi")
 })
 
