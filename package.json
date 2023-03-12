@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "run": "ts-node-dev ./src/account/account.ts",
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "vitest": "^0.29.2"
   }
 }
