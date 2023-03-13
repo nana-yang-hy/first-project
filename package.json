@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "run": "ts-node-dev ./src/account/account.ts",
+    "run": "ts-node-dev ./src/main.ts",
     "test": "vitest",
     "coverage": "vitest run --coverage"
   },
