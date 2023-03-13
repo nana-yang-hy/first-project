@@ -61,8 +61,5 @@ function getMember(): any {
     })
 }
 
-app.listen(3000, () => {
-    console.log("listening...")
-})
 
 export {client, getHomePage, signIn, getMember};
