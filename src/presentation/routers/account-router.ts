@@ -1,13 +1,8 @@
-import express, {Request, Response} from 'express';
-import {Database} from "../../data/postgresql/database";
-import {PostgreSql} from "../../data/postgresql/postgresql";
-// import {AccountService} from "../../account/account-service";
+import express, { Request, Response } from 'express';
+import { PostgreSql } from "../../data/postgresql/postgresql";
+import { user, host, password, port } from "../../config/config-postgres";
 
-const PG_USER = process.env.PG_USER as string;
-const PG_HOST = process.env.PG_HOST as string;
-const PG_PASSWORD = process.env.PG_PASSWORD as string;
-const PG_PORT: number = process.env.PG_PORT as unknown as number;
-const PSQL = new PostgreSql(PG_USER, PG_HOST, PG_PASSWORD, PG_PORT);
+const PSQL = new PostgreSql(user, host, password, port);
 const router = express.Router();
 
 (async () => {

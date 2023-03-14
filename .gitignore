@@ -1,4 +1,4 @@
 .idea
 node_modules
-.env
-/src/login/test.ts
+/src/test.ts
+/src/config/config.json
