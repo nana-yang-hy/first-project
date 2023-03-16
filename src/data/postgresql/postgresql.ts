@@ -45,7 +45,7 @@ export class PostgreSql {
         try {
             let user = await this.db.query(`SELECT *
                                             FROM ${db_table}
-                                            WHERE userid = ${user_id}`);
+                                            WHERE userid = $1`, [user_id]);
             let result = user.rows.map(content => ({
                     userid: content.userid,
                     username: content.username,
@@ -82,12 +82,12 @@ export class PostgreSql {
         {
             try {
                 await Promise.all(Object.entries(content).map(([key, value]) => {
-                    if (value !== undefined) {
+                    if (value !== undefined && value !== "") {
                         this.db.query(`UPDATE ${db_table}
                                        SET ${key} = '${value}'
-                                       WHERE userid = ${user_id}`);
+                                       WHERE userid = $1`, [user_id]);
                     }
-                }))
+                }));
                 let result = this.getUser(db_table, user_id);
                 return result;
             } catch (e) {
@@ -95,12 +95,36 @@ export class PostgreSql {
             }
         }
     }
-    public async deleteUser(db_table: string, user_id: string){
-        try{
-            let deletUser = await this.db.query(`DELETE FROM ${db_table} WHERE userid = ${user_id}`);
+
+    public async deleteUser(db_table: string,
+                            user_id: string) {
+        try {
+            let deletUser = await this.db.query(`DELETE
+                                                 FROM ${db_table}
+                                                 WHERE userid = $1`, [user_id]);
             return deletUser;
+        } catch (e) {
+            return e;
+        }
+    }
+
+    public async checkEmail(db_table: string,
+                            email: string) {
+        try {
+            let checkEmail = await this.db.query(`SELECT *
+                                                  FROM ${db_table}
+                                                  WHERE email = $1`, [email]);
+            let result = checkEmail.rows.map(content => ({
+                userid: content.userid,
+                username: content.username,
+                email: content.email,
+                password: content.password,
+                birthday: content.birthday
+            }));
+            return result;
         }catch (e) {
             return e;
         }
     }
 }
+
