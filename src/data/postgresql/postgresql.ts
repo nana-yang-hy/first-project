@@ -19,7 +19,13 @@ export class PostgreSql {
                 password,
                 port,
             })
-        this.db.connect();
+        this.db.connect()
+            .then(data => {
+                console.log("Db connect success!!!!")
+            })
+            .catch(error => {
+                console.error("DB connect Error!!!!!");
+            });
     }
 
     public async getAllUsers(db_table: string) {
@@ -67,11 +73,10 @@ export class PostgreSql {
                             password: string,
                             birthday: string) {
         try {
+            let result: any = [];
             await this.db.query(`INSERT INTO ${db_table}
-                                 VALUES ($1, $2, $3, $4,
-                                         $5)`, [user_id, user_name, email, password, birthday]
+                                               VALUES ($1, $2, $3, $4, $5)`, [user_id, user_name, email, password, birthday]
             )
-            let result = this.getUser(db_table, user_id)
             return result;
         } catch (e) {
             return e;
@@ -81,14 +86,15 @@ export class PostgreSql {
     public async updateUser(db_table: string, user_id: string, content: Record<string, any>) {
         {
             try {
-                await Promise.all(Object.entries(content).map(([key, value]) => {
+                let result: any = [];
+                let user: any = await Promise.all(Object.entries(content).map(async ([key, value]) => {
                     if (value !== undefined && value !== "") {
-                        this.db.query(`UPDATE ${db_table}
-                                       SET ${key} = '${value}'
-                                       WHERE userid = $1`, [user_id]);
+                        let update = await this.db.query(`UPDATE ${db_table}
+                                                          SET ${key} = '${value}'
+                                                          WHERE userid = $1 RETURNING ${key} as ${key}`, [user_id]);
+                        result.push(update.rows);
                     }
-                }));
-                let result = this.getUser(db_table, user_id);
+                }))
                 return result;
             } catch (e) {
                 return e;
@@ -111,18 +117,18 @@ export class PostgreSql {
     public async checkEmail(db_table: string,
                             email: string) {
         try {
+            let existedEmail: boolean = false;
             let checkEmail = await this.db.query(`SELECT *
                                                   FROM ${db_table}
                                                   WHERE email = $1`, [email]);
             let result = checkEmail.rows.map(content => ({
-                userid: content.userid,
-                username: content.username,
                 email: content.email,
-                password: content.password,
-                birthday: content.birthday
             }));
-            return result;
-        }catch (e) {
+            if (result.length !== 0 && result[0].email == email) {
+                existedEmail = true;
+            }
+            return existedEmail;
+        } catch (e) {
             return e;
         }
     }

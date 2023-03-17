@@ -12,14 +12,12 @@
     <p>更新資料如下</p>
     <div>
         <table>
+            <% for (let index = 0; index < updateUser.length; index++) { %>
             <tr>
-                <th>username</th>
-                <td><%= getUser[0].username %></td>
-                <th>e-mail</th>
-                <td><%= getUser[0].email %></td>
-                <th>birthday</th>
-                <td><%= getUser[0].birthday %></td>
+                <th><%= getKey(updateUser[index][0], 0) %></th>
+                <td><%= getValue(updateUser[index][0], 0) %></td>
             </tr>
+            <% } %>
         </table>
     </div>
     <a href="/account">log in</a>
