@@ -9,7 +9,7 @@
 </head>
 <body>
 <h1>To Go List</h1>
-<form action="/account/" method="POST">
+<form id="sign-in" action="/account/" method="POST">
     <label for="user_name"></label>
     <input type="text" name="user_name" placeholder="username">
     <label for="email"></label>
@@ -18,8 +18,8 @@
     <input type="password" name="password" placeholder="password">
     <label for="birthday"></label>
     <input type="date" name="birthday" placeholder="YYYY-MM-DD">
-    <button>Sign in</button>
+    <button id="button" type="submit">Sign in</button>
 </form>
-<a href="/account">Already have an account?</a>
+<a href="/account/log-in">Already have an account?</a>
 </body>
 </html>

@@ -8,15 +8,18 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <form action="/account/<%= getUser[0].userid %>?_method=PUT" method="POST">
+    <form action="/account/<%= getUser[0].userid %>?_method=PATCH" method="POST">
         <label for="username"></label>
         <input type="text" name="username" placeholder="username">
         <label for="email"></label>
         <input type="text" name="email" placeholder="email">
         <label for="password"></label>
-        <input type="password" name="password" placeholder="password">
+        <input type="password" name="new_password" placeholder="password">
         <label for="birthday"></label>
         <input type="date" name="birthday" placeholder="YYYY-MM-DD">
+        <br/>
+        <label for="confirm_password"></label>
+        <input type="password" name="confirm_password" placeholder="confirm password">
         <button>save</button>
     </form>
 </body>

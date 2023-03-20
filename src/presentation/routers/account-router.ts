@@ -2,6 +2,7 @@ import express, {NextFunction, Request, Response} from 'express';
 import {PostgreSql} from '../../data/postgresql/postgresql';
 import {user, host, password, port} from '../../config/config-postgres';
 import {v4 as uuidv4} from 'uuid';
+import {QueryResult} from "pg";
 
 const router = express.Router();
 const session = require("express-session");
@@ -22,7 +23,10 @@ const verifiedUser = (req: any, res: Response, next: NextFunction) => {
     if (req.session.isVerified) {
         next();
     } else {
-        return res.send('請先登入使用者')
+        return res.status(400).json({
+            msg:'please login',
+            code:'V002'
+        })
     }
 }
 
@@ -34,7 +38,11 @@ const verifiedUser = (req: any, res: Response, next: NextFunction) => {
 //     }
 // }
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
+    return res.send('Home page')
+})
+
+router.get('/log-in', async (req: Request, res: Response) => {
     try {
         return res.render('./account/account-login');
     } catch (e) {
@@ -59,7 +67,7 @@ router.get('/:user_id', verifiedUser, async (req: Request, res: Response) => {
     try {
         let {user_id} = req.params;
         let getUser: any = await postgreSql.getUser('schema1.users', user_id);
-        return res.status(200).render('./account/account-user-page', {getUser});
+        return res.json(getUser);
     } catch (e) {
         return res.status(500).send(e);
     }
@@ -75,23 +83,26 @@ router.get('/:user_id/update', async (req: Request, res: Response) => {
     }
 })
 
+router.get('/:user_id/delete', async (req: Request, res: Response) => {
+    let {user_id} = req.params;
+    return res.render('./account/account-delete', {user_id});
+})
 
 router.post('/', async (req: Request, res: Response) => {
     try {
         let user_id = uuidv4();
         let {user_name, email, password, birthday} = req.body;
-        let hashPassword = await bcrypt.hash(password, saltRounds);
-        let checkEmail: any = await postgreSql.checkEmail('schema1.users', email);
-        if (checkEmail == false) {
-            await postgreSql.createUser('schema1.users', user_id, user_name, email, hashPassword, birthday);
-            let getUser = await postgreSql.getUser('schema1.users', user_id);
-            return res.status(200).render('./account/account-new', {getUser});
-        } else {
+        let myHashPassword = await hashPassword(password);
+        await postgreSql.createUser('schema1.users', user_id, user_name, email, myHashPassword, birthday);
+        return res.redirect('/account')
+    } catch (e: any) {
+        console.log(e);
+        if (e.code == 23505) {
             return res.status(400).send('此email已註冊');
+        } else if (e.code == 22007 || e.code == 23502 || e.code == 42710) {
+            return res.status(400).send('欄位不可為空');
         }
-    } catch (e) {
-        console.error(e);
-        return res.status(500).send(e);
+        return res.status(500).send('註冊發生錯誤');
     }
 })
 
@@ -102,46 +113,82 @@ router.post('/log-in', async (req: any, res: Response) => {
         if (checkEmail == false) {
             return res.status(400).send('此email尚未註冊使用者')
         } else {
-            // let checkPassword = checkEmail[0].password;
-            // let verified = await bcrypt.compare(password, checkPassword);
-            // if (password == checkPassword) {
-                req.session.isVerified = true;
-                return res.send('您已登入系統');
-            // }
+            req.session.isVerified = true;
+            return res.json({
+                msg:'login success',
+                code:'L001'
+            });
         }
     } catch (e) {
-        return res.status(500).send(e);
+        return res.json({
+            msg:'login failed',
+            code:'L002'
+        })
     }
 })
 
-router.put('/:user_id', async (req: Request, res: Response) => {
+router.patch('/:user_id', async (req: Request, res: Response) => {
     try {
         let {user_id} = req.params;
-        let {username, email, password, birthday} = req.body;
-        let updateUser = await postgreSql.updateUser('schema1.users', user_id, {username, email, password, birthday});
-        return res.status(200).render('./account/account-user-update', {updateUser, getKey, getValue});
+        let {username, email, new_password, birthday, confirm_password} = req.body;
+        let currentPassword = await postgreSql.currentPassword('schema1.users', user_id);
+        let passwordCorrect = await checkPassword(confirm_password, currentPassword);
+        if (passwordCorrect) {
+            let myHashPassword = await hashPassword(new_password);
+            await postgreSql.updateUser('schema1.users', user_id, {
+                username,
+                email,
+                password: myHashPassword,
+                birthday
+            });
+            return res.send('success');
+        } else if (!passwordCorrect) {
+            return res.send('wrong password');
+        } else {
+            throw new Error('error');
+        }
     } catch (e) {
+        console.error(e);
         return res.status(500).send(e);
     }
 })
-router.delete('/:user_id', async (req: Request, res: Response) => {
+router.delete('/:user_id/delete', async (req: Request, res: Response) => {
     try {
         let {user_id} = req.params;
-        await postgreSql.deleteUser('schema1.users', user_id);
-        return res.status(200).render('./account/account-user-delete');
+        let {password} = req.body;
+        let currentPassword = await postgreSql.currentPassword('schema1.users', user_id);
+        let passwordCorrect = await checkPassword(password, currentPassword);
+        if (passwordCorrect) {
+            await postgreSql.deleteUser('schema1.users', user_id);
+            return res.send('user deleted');
+        } else if (!passwordCorrect) {
+            return res.send('wrong password');
+        } else {
+            throw new Error('error');
+        }
     } catch (e) {
         return res.status(500).send(e);
     }
 });
 
-function getKey(object: object, index: any) {
-    let objectKeys = Object.keys(object);
-    return objectKeys[index];
+async function hashPassword(plainPassword: string): Promise<string> {
+    let hashPassword = '';
+    if (plainPassword !== '') {
+        hashPassword = await bcrypt.hash(plainPassword, saltRounds);
+    }
+    return hashPassword;
 }
 
-function getValue(object: object, index: any) {
-    let objectValues = Object.values(object);
-    return objectValues[index];
+async function checkPassword(confirmPassword: string, currentPassword: string): Promise<boolean> {
+    try {
+        if(confirmPassword == ''){
+            return false;
+        }
+        await bcrypt.compare(confirmPassword, currentPassword);
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 module.exports = router;

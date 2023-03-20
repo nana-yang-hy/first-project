@@ -22,8 +22,7 @@
     </table>
 </div>
 <form action="/account/<%= getUser[0].userid %>?_method=DELETE" method="POST">
-    <button>delete user</button>
 </form>
-<a href="/account">log in</a>
+<a href="/account/<%= getUser[0].userid %>/delete">delete user</a>
 </body>
 </html>
