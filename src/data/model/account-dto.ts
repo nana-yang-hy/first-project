@@ -2,6 +2,6 @@ export type AccountDto = {
     userId: string,
     username: string,
     email: string,
-    password: string,
+    userHashedPassword: string,
     birthday: string
 }

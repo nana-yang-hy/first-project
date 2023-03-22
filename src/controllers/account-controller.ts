@@ -14,13 +14,13 @@ export class AccountController {
         default: async (req: Request, res: Response) => {
             {
                 try {
-                    let user_id = req.session?.userId;
+                    let userId = req.session?.userId;
                     return res.status(200).json({
                         msg: 'To go list',
                         url: {
                             calendar: '/calendar',
                             map: '/map',
-                            profile: `/account/${user_id}`
+                            profile: `/account/${userId}`
                         },
                         option: 'log-out',
                         code: 'G001'
@@ -60,19 +60,19 @@ export class AccountController {
                     req.session!.isVerified = true;
                     req.session!.userId = userId;
                     return res.json({
-                        msg: 'super login success',
+                        msg: 'super log in success',
                         code: 'L003'
                     })
                 }
                 req.session!.isVerified = true;
                 req.session!.userId = userId;
                 return res.json({
-                    msg: 'login success',
+                    msg: 'log in success',
                     code: 'L001'
                 })
             } catch (e) {
                 return res.json({
-                    msg: 'login failed',
+                    msg: 'log in failed',
                     errorMessage: e,
                     code: 'L002'
                 })
@@ -83,8 +83,8 @@ export class AccountController {
     public getUserProfileController = {
         default: async (req: Request, res: Response) => {
             try {
-                let {user_id} = req.params;
-                let getUser: any = await this.postgreSql.getUser('schema1.users', user_id);
+                let userId = req.session!.userId;
+                let getUser: any = await this.postgreSql.getUser('schema1.users', userId);
                 return res.json({
                     msg: 'get profile success',
                     obj: getUser,
@@ -113,13 +113,30 @@ export class AccountController {
             }
         }
     }
+
+    public logOutController = {
+        default: async (req: Request, res: Response) => {
+            try{
+                req.session!.isVerified = false;
+                return res.status(200).json({
+                    msg:'log out success',
+                    code:'L004'
+                })
+            }catch (e) {
+                return res.status(500).json({
+                    msg:'log out failed',
+                    code:'L005'
+                })
+            }
+        }
+    }
     public createUserController = {
         default: async (req: Request, res: Response) => {
             try {
-                let user_id = uuidv4();
-                let {user_name, email, password, birthday} = req.body;
-                let myHashPassword = await this.hashPassword(password);
-                await this.postgreSql.createUser('schema1.users', user_id, user_name, email, myHashPassword, birthday);
+                let userId = uuidv4();
+                let {username, email, password, birthday} = req.body;
+                let userHashedPassword = await this.hashedPassword(password);
+                await this.postgreSql.createUser('schema1.users', {userId, username, email, userHashedPassword, birthday});
                 return res.status(200).json({
                     msg: 'sign in success',
                     code: 'C001'
@@ -146,16 +163,16 @@ export class AccountController {
     public updateUserController = {
         default: async (req: Request, res: Response) => {
             try {
-                let {user_id} = req.params;
+                let userId = req.session!.userId;
                 let {username, email, new_password, birthday, confirm_password} = req.body;
-                let currentPassword = await this.postgreSql.currentPassword('schema1.users', user_id);
+                let currentPassword = await this.postgreSql.currentPassword('schema1.users', userId);
                 let passwordCorrect = await this.checkPassword(confirm_password, currentPassword);
                 if (passwordCorrect) {
-                    let myHashPassword = await this.hashPassword(new_password);
-                    await this.postgreSql.updateUser('schema1.users', user_id, {
+                    let userHashedPassword = await this.hashedPassword(new_password);
+                    await this.postgreSql.updateUser('schema1.users', userId, {
                         username,
                         email,
-                        password: myHashPassword,
+                        user_hashed_password: userHashedPassword,
                         birthday
                     });
                     return res.status(200).json({
@@ -180,12 +197,12 @@ export class AccountController {
     public deleteUserController = {
         default: async (req: Request, res: Response) => {
             try {
-                let {user_id} = req.params;
+                let userId = req.session!.userId;
                 let {password} = req.body;
-                let currentPassword = await this.postgreSql.currentPassword('schema1.users', user_id);
+                let currentPassword = await this.postgreSql.currentPassword('schema1.users', userId);
                 let passwordCorrect = await this.checkPassword(password, currentPassword);
                 if (passwordCorrect) {
-                    await this.postgreSql.deleteUser('schema1.users', user_id);
+                    await this.postgreSql.deleteUser('schema1.users', userId);
                     return res.status(200).json({
                         msg: 'delete user success',
                         code: 'D001'
@@ -207,12 +224,12 @@ export class AccountController {
     }
 
 
-    private async hashPassword(plainPassword: string): Promise<string> {
-        let hashPassword = '';
+    private async hashedPassword(plainPassword: string): Promise<string> {
+        let hashedPassword = '';
         if (plainPassword !== '') {
-            hashPassword = await bcrypt.hash(plainPassword, saltRounds);
+            hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
         }
-        return hashPassword;
+        return hashedPassword;
     }
 
     private async checkPassword(confirmPassword: string, currentPassword: string): Promise<boolean> {
@@ -220,11 +237,7 @@ export class AccountController {
             if (confirmPassword == '') {
                 return false;
             }
-            console.log(confirmPassword);
-            console.log(currentPassword);
-            let answer = await bcrypt.compare(confirmPassword, currentPassword);
-            console.log(answer);
-            return answer;
+            return await bcrypt.compare(confirmPassword, currentPassword);
         } catch (e) {
             return false;
         }
