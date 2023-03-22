@@ -1,11 +1,11 @@
-import {AccountDto} from "../../data/model/account-dto";
+import {UserDto} from "../../data/model/user-dto";
 
 export {}
 
 declare global {
     namespace Express {
         export interface Request {
-            session?: AccountDto & { isVerified?: boolean } & {superUser?: boolean}
+            session?: UserDto & { isVerified?: boolean } & {superUser?: boolean}
         }
     }
 }

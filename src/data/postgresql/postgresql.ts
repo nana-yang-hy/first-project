@@ -1,5 +1,5 @@
 import {Client, QueryResult} from "pg";
-import {AccountDto} from "../model/account-dto";
+import {UserDto} from "../model/user-dto";
 
 export class PostgreSql {
     db: Client
@@ -40,12 +40,12 @@ export class PostgreSql {
 
     }
 
-    public async getUser(db_table: string, user_id: string): Promise<AccountDto[]> {
+    public async getUser(db_table: string, userId: string): Promise<UserDto[]> {
         try {
             await this.db.query('BEGIN');
             let user = await this.db.query(`SELECT *
                                             FROM ${db_table}
-                                            WHERE user_id = $1`, [user_id]);
+                                            WHERE user_id = $1`, [userId]);
             let result = PostgreSql.mapAccountResult(user);
             await this.db.query('COMMIT');
             return result;
@@ -58,11 +58,11 @@ export class PostgreSql {
     public async getUserId(db_table: string, email: string): Promise<string> {
         try {
             await this.db.query('BEGIN');
-            let userid = await this.db.query(`SELECT user_id
+            let userId = await this.db.query(`SELECT user_id
                                               FROM ${db_table}
                                               WHERE email = $1`, [email]);
             await this.db.query('COMMIT');
-            return userid.rows[0].user_id;
+            return userId.rows[0].user_id;
         } catch (e) {
             await this.db.query('ROLLBACK');
             throw e;
@@ -70,16 +70,15 @@ export class PostgreSql {
     }
 
     public async createUser(db_table: string,
-                            account: AccountDto): Promise<number> {
+                            user: UserDto): Promise<number> {
         try {
-            console.log('hi');
             await this.db.query(`ALTER TABLE ${db_table} DROP CONSTRAINT IF EXISTS check_not_null;
             ALTER TABLE ${db_table}
-                ADD CONSTRAINT check_not_null CHECK (username <> '' and email <> '');
+                ADD CONSTRAINT check_not_null CHECK (name <> '' and email <> '');
             `);
             let newUser = await this.db.query(`INSERT INTO ${db_table}
                                                VALUES ($1,$2,$3,$4,$5);
-            `,[account.userId,account.username,account.email,account.userHashedPassword,account.birthday]);
+            `,[user.userId,user.name,user.email,user.hashedPassword,user.birthday]);
             return newUser.rowCount;
         } catch (e) {
             console.error(e)
@@ -87,7 +86,7 @@ export class PostgreSql {
         }
     }
 
-    public async updateUser(db_table: string, user_id: string, content: Record<string, any>): Promise<number> {
+    public async updateUser(db_table: string, userId: string, content: Record<string, any>): Promise<number> {
         {
             try {
                 let rowCount: number = 0;
@@ -95,12 +94,11 @@ export class PostgreSql {
                         if (value !== undefined && value !== "") {
                             await this.db.query(`UPDATE ${db_table}
                                                  SET ${key} = '${value}'
-                                                 WHERE user_id = $1`, [user_id]);
+                                                 WHERE user_id = $1`, [userId]);
                             rowCount++;
                         }
                     }
                 ))
-                console.log(rowCount);
                 return rowCount;
             } catch (e) {
                 throw e;
@@ -109,11 +107,11 @@ export class PostgreSql {
     }
 
     public async deleteUser(db_table: string,
-                            user_id: string) {
+                            userId: string) {
         try {
             return await this.db.query(`DELETE
                                         FROM ${db_table}
-                                        WHERE user_id = $1`, [user_id]);
+                                        WHERE user_id = $1`, [userId]);
         } catch (e) {
             return e;
         }
@@ -138,24 +136,24 @@ export class PostgreSql {
         }
     }
 
-    public async currentPassword(db_table: string, user_id: string): Promise<string> {
+    public async currentPassword(db_table: string, userId: string): Promise<string> {
         try {
-            let result = await this.db.query(`SELECT user_hashed_password
+            let result = await this.db.query(`SELECT hashed_password
                                               FROM ${db_table}
-                                              WHERE user_id = $1`, [user_id]);
+                                              WHERE user_id = $1`, [userId]);
             let mappedResult = PostgreSql.mapAccountResult(result)
-            return mappedResult[0].userHashedPassword;
+            return mappedResult[0].hashedPassword;
         } catch (e) {
             throw e;
         }
     }
 
     private static mapAccountResult =
-        (res: QueryResult): AccountDto[] => res.rows.map(r => ({
+        (res: QueryResult): UserDto[] => res.rows.map(r => ({
             userId: r.user_id,
-            username: r.username,
+            name: r.name,
             email: r.email,
-            userHashedPassword: r.user_hashed_password,
+            hashedPassword: r.hashed_password,
             birthday: r.birthday
         }));
 }
