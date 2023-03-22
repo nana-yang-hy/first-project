@@ -16,7 +16,6 @@ app.use(express.static('public'));
 app.use(methodOverride('_method'));
 app.use('/account', accountRoute);
 
-
 app.listen(3000, () => {
     console.log('listening...')
 });

@@ -63,6 +63,20 @@ export class PostgreSql {
         }
     }
 
+    public async getUserId(db_table: string, email: string): Promise<string>{
+        try{
+            await this.db.query('BEGIN');
+            let userid = await this.db.query(`SELECT userid
+                                            FROM ${db_table}
+                                            WHERE email = $1`, [email]);
+            await this.db.query('COMMIT');
+            return userid.rows[0].userid;
+        }catch (e) {
+            await this.db.query('ROLLBACK');
+            throw e;
+        }
+    }
+
     public async createUser(db_table: string,
                             user_id: string,
                             user_name: string,
@@ -150,7 +164,7 @@ export class PostgreSql {
 
     private static mapAccountResult =
         (res: QueryResult): AccountDto[] => res.rows.map(r => ({
-            userid: r.userid,
+            userId: r.userid,
             username: r.username,
             email: r.email,
             password: r.password,

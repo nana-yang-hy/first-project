@@ -1,14 +1,18 @@
+
 import express, {NextFunction, Request, Response} from 'express';
 import {PostgreSql} from '../../data/postgresql/postgresql';
 import {user, host, password, port} from '../../config/config-postgres';
 import {v4 as uuidv4} from 'uuid';
 import {QueryResult} from "pg";
 
+
 const router = express.Router();
 const session = require("express-session");
 const bcrypt = require("bcrypt");
 const saltRounds = 12;
 const postgreSql = new PostgreSql(user, host, password, port);
+
+declare var postman: any;
 
 router.use(
     session({
@@ -24,8 +28,8 @@ const verifiedUser = (req: any, res: Response, next: NextFunction) => {
         next();
     } else {
         return res.status(400).json({
-            msg:'please login',
-            code:'V002'
+            msg: 'please login before access this page',
+            code: 'V002'
         })
     }
 }
@@ -38,9 +42,26 @@ const verifiedUser = (req: any, res: Response, next: NextFunction) => {
 //     }
 // }
 
-router.get('/', (req: Request, res: Response) => {
-    return res.send('Home page')
-})
+router.get('/', verifiedUser, (req: Request, res: Response) => {
+    try {
+        let user_id = req.session?.userId;
+        return res.status(200).json({
+            msg: 'To go list',
+            url: {
+                calendar: '/calendar',
+                map: '/map',
+                profile: `/account/${user_id}/profile`
+            },
+            option: 'log-out',
+            code: 'G001'
+        });
+    } catch (e) {
+        return res.status(500).json({
+            msg: 'get homepage error',
+            code: 'G002'
+        })
+    }
+});
 
 router.get('/log-in', async (req: Request, res: Response) => {
     try {
@@ -110,19 +131,22 @@ router.post('/log-in', async (req: any, res: Response) => {
     try {
         let {email, password} = req.body
         let checkEmail: any = await postgreSql.checkEmail('schema1.users', email);
+        let userid: string = await postgreSql.getUserId('schema1.users', email);
         if (checkEmail == false) {
             return res.status(400).send('此email尚未註冊使用者')
         } else {
             req.session.isVerified = true;
+            req.session.userId = userid;
             return res.json({
-                msg:'login success',
-                code:'L001'
+                msg: 'login success',
+                code: 'L001'
             });
         }
     } catch (e) {
         return res.json({
-            msg:'login failed',
-            code:'L002'
+            msg: 'login failed',
+            errorMessage: e,
+            code: 'L002'
         })
     }
 })
@@ -181,7 +205,7 @@ async function hashPassword(plainPassword: string): Promise<string> {
 
 async function checkPassword(confirmPassword: string, currentPassword: string): Promise<boolean> {
     try {
-        if(confirmPassword == ''){
+        if (confirmPassword == '') {
             return false;
         }
         await bcrypt.compare(confirmPassword, currentPassword);
