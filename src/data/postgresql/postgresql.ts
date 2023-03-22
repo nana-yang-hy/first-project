@@ -33,14 +33,7 @@ export class PostgreSql {
         try {
             let users = await this.db.query(`SELECT *
                                              FROM ${db_table}`);
-            let result = users.rows.map(content => ({
-                    userid: content.userid,
-                    username: content.username,
-                    email: content.email,
-                    password: content.password,
-                    birthday: content.birthday
-                }
-            ))
+            let result = PostgreSql.mapAccountResult(users);
             return result;
         } catch (e) {
             return e;
@@ -122,10 +115,9 @@ export class PostgreSql {
     public async deleteUser(db_table: string,
                             user_id: string) {
         try {
-            let deletUser = await this.db.query(`DELETE
+            return await this.db.query(`DELETE
                                                  FROM ${db_table}
                                                  WHERE userid = $1`, [user_id]);
-            return deletUser;
         } catch (e) {
             return e;
         }

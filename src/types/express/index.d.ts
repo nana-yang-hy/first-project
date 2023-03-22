@@ -5,7 +5,7 @@ export {}
 declare global {
     namespace Express {
         export interface Request {
-            session?: AccountDto;
+            session?: AccountDto & { isVerified?: boolean } & {superUser?: boolean}
         }
     }
 }
