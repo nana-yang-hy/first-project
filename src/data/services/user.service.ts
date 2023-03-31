@@ -1,7 +1,7 @@
 import {Client, QueryResult} from "pg";
 import {UserDto} from "../model/user-dto";
 
-export class PostgreSql {
+export class UserService {
     db: Client
     user: string
     host: string
@@ -32,7 +32,7 @@ export class PostgreSql {
         try {
             let users = await this.db.query(`SELECT *
                                              FROM ${db_table}`);
-            let result = PostgreSql.mapAccountResult(users);
+            let result = UserService.mapAccountResult(users);
             return result;
         } catch (e) {
             return e;
@@ -46,7 +46,7 @@ export class PostgreSql {
             let user = await this.db.query(`SELECT *
                                             FROM ${db_table}
                                             WHERE user_id = $1`, [userId]);
-            let result = PostgreSql.mapAccountResult(user);
+            let result = UserService.mapAccountResult(user);
             await this.db.query('COMMIT');
             return result;
         } catch (e) {
@@ -141,7 +141,7 @@ export class PostgreSql {
             let result = await this.db.query(`SELECT hashed_password
                                               FROM ${db_table}
                                               WHERE user_id = $1`, [userId]);
-            let mappedResult = PostgreSql.mapAccountResult(result)
+            let mappedResult = UserService.mapAccountResult(result)
             return mappedResult[0].hashedPassword;
         } catch (e) {
             throw e;
