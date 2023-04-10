@@ -73,8 +73,7 @@ export class UserService {
                             user: UserDto): Promise<number> {
         try {
             await this.db.query(`ALTER TABLE ${db_table} DROP CONSTRAINT IF EXISTS check_not_null;
-            ALTER TABLE ${db_table}
-                ADD CONSTRAINT check_not_null CHECK (name <> '' and email <> '');
+            ALTER TABLE ${db_table} ADD CONSTRAINT check_not_null CHECK (name <> '' and email <> '');
             `);
             let newUser = await this.db.query(`INSERT INTO ${db_table}
                                                VALUES ($1,$2,$3,$4,$5);
@@ -154,7 +153,10 @@ export class UserService {
             name: r.name,
             email: r.email,
             hashedPassword: r.hashed_password,
-            birthday: r.birthday
+            birthday: r.birthday,
+            accessToken: r.access_token,
+            refreshToken: r.refresh_token,
+            googleId: r.google_id
         }));
 }
 

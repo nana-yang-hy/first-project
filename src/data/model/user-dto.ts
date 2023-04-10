@@ -3,5 +3,8 @@ export type UserDto = {
     name: string,
     email: string,
     hashedPassword: string,
-    birthday: string
+    birthday: string,
+    accessToken: string,
+    refreshToken: string,
+    googleId: string
 }

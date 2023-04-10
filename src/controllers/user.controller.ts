@@ -9,6 +9,8 @@ const saltRounds = 12;
 
 export class UserController {
 
+    table = 'schema1.users'
+
     private userService = new UserService(user, host, password, port);
 
     public getHomePage = {
@@ -40,15 +42,15 @@ export class UserController {
         logIn: async (req: Request, res: Response) => {
             try {
                 let {email, password, option} = req.body
-                let checkEmail = await this.userService.checkEmail('schema1.users', email);
+                let checkEmail = await this.userService.checkEmail(this.table, email);
                 if (!checkEmail) {
                     return res.status(400).json({
                         msg:'incorrect email or password',
                         code:'E004'
                     })
                 }
-                let userId = await this.userService.getUserId('schema1.users', email);
-                let currentPassword = await this.userService.currentPassword('schema1.users',userId)
+                let userId = await this.userService.getUserId(this.table, email);
+                let currentPassword = await this.userService.currentPassword(this.table,userId)
                 let checkPassword = await this.checkPassword(password,currentPassword);
                 if (!checkPassword) {
                     return res.status(400).json({
@@ -100,7 +102,7 @@ export class UserController {
         getProfile: async (req: Request, res: Response) => {
             try {
                 let {user_id} = req.params;
-                let getUser: UserDto[] = await this.userService.getUser('schema1.users', user_id);
+                let getUser: UserDto[] = await this.userService.getUser(this.table, user_id);
                 return res.json({
                     msg: 'get profile success',
                     obj: getUser,
@@ -115,7 +117,7 @@ export class UserController {
         },
         getAllUsers: async (req: Request, res: Response) => {
             try {
-                let users = await this.userService.getAllUsers('schema1.users');
+                let users = await this.userService.getAllUsers(this.table);
                 return res.status(200).json({
                     msg: `get all users' profiles success`,
                     obj: users,
@@ -133,8 +135,26 @@ export class UserController {
             try {
                 let userId = uuidv4();
                 let {name, email, password, birthday} = req.body;
+
+                if(password == ""){
+                    return res.status(400).json({
+                        msg: 'field cannot be empty',
+                        code: 'E002'
+                    });
+                }
+
                 let hashedPassword = await this.hashedPassword(password);
-                await this.userService.createUser('schema1.users', {userId, name, email, hashedPassword, birthday});
+                let user = {
+                    userId,
+                    name,
+                    email,
+                    hashedPassword,
+                    birthday,
+                    accessToken: '',
+                    refreshToken: '',
+                    googleId: '',
+                }
+                await this.userService.createUser(this.table, user);
                 return res.status(200).json({
                     msg: 'sign in success',
                     code: 'C001'
@@ -145,7 +165,7 @@ export class UserController {
                         msg: 'email has been used',
                         code: 'E001'
                     });
-                } else if (e.code == 22007 || e.code == 23502 || e.code == 42710) {
+                } else if (e.code == 22007 || e.code == 23502 || e.code == 23514 || e.code == 42710) {
                     return res.status(400).json({
                         msg: 'field cannot be empty',
                         code: 'E002'
@@ -162,11 +182,11 @@ export class UserController {
             try {
                 let {user_id} = req.params;
                 let {name, email, new_password, birthday, confirm_password} = req.body;
-                let currentPassword = await this.userService.currentPassword('schema1.users', user_id);
+                let currentPassword = await this.userService.currentPassword(this.table, user_id);
                 let passwordCorrect = await this.checkPassword(confirm_password, currentPassword);
                 if (passwordCorrect) {
                     let hashed_password = await this.hashedPassword(new_password);
-                    await this.userService.updateUser('schema1.users', user_id, {
+                    await this.userService.updateUser(this.table, user_id, {
                         name,
                         email,
                         hashed_password,
@@ -194,10 +214,10 @@ export class UserController {
             try {
                 let {user_id} = req.params;
                 let {password} = req.body;
-                let currentPassword = await this.userService.currentPassword('schema1.users', user_id);
+                let currentPassword = await this.userService.currentPassword(this.table, user_id);
                 let passwordCorrect = await this.checkPassword(password, currentPassword);
                 if (passwordCorrect) {
-                    await this.userService.deleteUser('schema1.users', user_id);
+                    await this.userService.deleteUser(this.table, user_id);
                     return res.status(200).json({
                         msg: 'delete user success',
                         code: 'D001'
