@@ -4,17 +4,7 @@ import {verifiedUser} from "../../middlewares/verifiedUser.middleware";
 import {superUser} from "../../middlewares/superUser.middleware";
 
 const router = express.Router();
-const session = require("express-session");
 const userController = new UserController();
-
-router.use(
-    session({
-        secret: "123",
-        resave: false,
-        saveUninitialized: false,
-        cookie: {secure: false},
-    })
-);
 
 router.get('/', verifiedUser, userController.getHomePage.default);
 router.get('/all', superUser, userController.users.getAllUsers)
