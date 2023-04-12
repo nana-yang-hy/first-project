@@ -8,6 +8,7 @@ const router = express.Router();
 const passport = require('passport');
 const userController = new UserController();
 const request = require('request');
+const table = 'schema1.users';
 
 router.get('/login-failed', (req: Request, res: Response) => {
     return res.status(200).json({
@@ -35,17 +36,25 @@ router.get("/google/redirect", passport.authenticate("google"), (req: Request, r
         }
     };
     request.get(options, async (error: any, response: Response, body: string) => {
+
         if (error) {
             console.error(error);
             return res.status(500).send('Internal Server Error');
         }
-        let result = JSON.parse(body);
-        let year = result.birthdays[0].date.year;
-        let month = result.birthdays[0].date.month;
-        let day = result.birthdays[0].date.day;
-        let birthday = `${year}-${month}-${day}`
 
-        await userController.users.updateBirthday(birthday, user, res);
+        let foundUser = await userController.users.findUser(user.googleId);
+
+        if(!foundUser){
+            let result = JSON.parse(body);
+            let year = result.birthdays[0].date.year;
+            let month = result.birthdays[0].date.month;
+            let day = result.birthdays[0].date.day;
+            user.birthday = `${year}-${month}-${day}`;
+            await userController.users.createByPassport(table, user);
+            let newUser = await userController.users.findUser(user.googleId);
+            console.log(newUser);
+        }
+
         return res.status(200).json({
             msg:'redirect success'
         })

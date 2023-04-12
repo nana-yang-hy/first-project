@@ -49,8 +49,6 @@ passport.use(new GoogleStrategy({
                 refreshToken:refreshToken,
                 googleId: profile.id
             }
-            await userService.createUser(table, user);
-            user = await userService.getUser(table, user_id);
             cb(null, user);
         }
     } catch (e) {
