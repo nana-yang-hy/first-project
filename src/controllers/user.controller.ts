@@ -1,6 +1,6 @@
 import {Request, Response} from "express";
 import {UserService} from "../data/services/user.service";
-import {host, password, port, user} from "../config/config-postgres";
+import {user, host, password, port} from "../config/config-postgres";
 import {v4 as uuidv4} from "uuid";
 import {UserDto} from "../data/model/user-dto";
 
@@ -132,15 +132,6 @@ export class UserController {
                 });
             }
         },
-        
-        findUser: async (googleId: string): Promise<boolean> => {
-            try {
-                return await this.userService.findUserByGoogleId(this.table, googleId);
-            } catch (e) {
-                throw e;
-            }
-            
-        },
 
         create: async (req: Request, res: Response) => {
             try {
@@ -188,14 +179,6 @@ export class UserController {
                 });
             }
         },
-        
-        createByPassport: async (table: string, user: UserDto,) => {
-            try {
-                return await this.userService.createUser(table, user);
-            } catch (e) {
-                throw e
-            }
-        },
 
         update: async (req: Request, res: Response) => {
             try {
@@ -227,18 +210,6 @@ export class UserController {
                     code: 'U002'
                 });
             }
-        },
-
-        updateBirthday: async(birthday: string, user: UserDto, res: Response) => {
-          try {
-              await this.userService.updateUser(this.table, user.userId, {birthday});
-              return;
-          } catch (e) {
-              return res.status(500).json({
-                  msg: 'error occurred while updating',
-                  code: 'U002'
-              });
-          }
         },
 
         delete: async (req: Request, res: Response) => {
