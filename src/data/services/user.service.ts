@@ -108,9 +108,9 @@ export class UserService {
     public async createUser(db_table: string,
                             user: UserDto): Promise<number> {
         try {
-            await this.db.query(`ALTER TABLE ${db_table} DROP CONSTRAINT IF EXISTS check_not_null;
-            ALTER TABLE ${db_table} ADD CONSTRAINT check_not_null CHECK (name <> '' and email <> '');
-            `);
+            // await this.db.query(`ALTER TABLE ${db_table} DROP CONSTRAINT IF EXISTS check_not_null;
+            // ALTER TABLE ${db_table} ADD CONSTRAINT check_not_null CHECK (name <> '' and email <> '');`);
+
             let newUser = await this.db.query(`INSERT INTO ${db_table}
                                                VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
             `,[user.userId,user.name,user.email,user.hashedPassword,user.birthday,user.accessToken,user.refreshToken,user.googleId]);

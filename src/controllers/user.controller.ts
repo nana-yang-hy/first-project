@@ -132,13 +132,22 @@ export class UserController {
                 });
             }
         },
+        
+        findUser: async (googleId: string): Promise<boolean> => {
+            try {
+                return await this.userService.findUserByGoogleId(this.table, googleId);
+            } catch (e) {
+                throw e;
+            }
+            
+        },
 
         create: async (req: Request, res: Response) => {
             try {
                 let userId = uuidv4();
                 let {name, email, password, birthday} = req.body;
 
-                if(password == ""){
+                if(name == '' || email == '' || password == ''){
                     return res.status(400).json({
                         msg: 'field cannot be empty',
                         code: 'E002'
@@ -177,6 +186,14 @@ export class UserController {
                     msg: 'error occurred while sign in',
                     code: 'C002'
                 });
+            }
+        },
+        
+        createByPassport: async (table: string, user: UserDto,) => {
+            try {
+                return await this.userService.createUser(table, user);
+            } catch (e) {
+                throw e
             }
         },
 
