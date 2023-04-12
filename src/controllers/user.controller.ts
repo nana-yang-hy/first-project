@@ -103,7 +103,7 @@ export class UserController {
         getProfile: async (req: Request, res: Response) => {
             try {
                 let {user_id} = req.params;
-                let getUser: UserDto[] = await this.userService.getUser(this.table, user_id);
+                let getUser: UserDto = await this.userService.getUser(this.table, user_id);
                 return res.json({
                     msg: 'get profile success',
                     obj: getUser,
@@ -210,6 +210,18 @@ export class UserController {
                     code: 'U002'
                 });
             }
+        },
+
+        updateBirthday: async(birthday: string, user: UserDto, res: Response) => {
+          try {
+              await this.userService.updateUser(this.table, user.userId, {birthday});
+              return;
+          } catch (e) {
+              return res.status(500).json({
+                  msg: 'error occurred while updating',
+                  code: 'U002'
+              });
+          }
         },
 
         delete: async (req: Request, res: Response) => {

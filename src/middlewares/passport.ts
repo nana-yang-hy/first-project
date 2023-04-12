@@ -29,14 +29,13 @@ passport.use(new GoogleStrategy({
     callbackURL: '/auth/google/redirect'
 }, async (accessToken: string, refreshToken: string, profile: Profile, cb: AuthenticateCallback) => {
     try {
-        console.log(profile.id);
         let foundUser = await userService.findUserByGoogleId(table,profile.id);
         if (foundUser) {
             console.log('已註冊過使用者，無需再次註冊可直接登入');
             let user = await userService.getUserByGoogleId(table, profile.id);
-            await userService.updateUser(table, user[0].userId, {access_token: accessToken ,refresh_token: refreshToken});
-            user = await userService.getUser(table, user[0].userId);
-            cb(null, user[0]);
+            await userService.updateUser(table, user.userId, {access_token: accessToken ,refresh_token: refreshToken});
+            user = await userService.getUser(table, user.userId);
+            cb(null, user);
         } else {
             console.log('偵測到新用戶');
             let user_id = uuidv4();
@@ -51,6 +50,7 @@ passport.use(new GoogleStrategy({
                 googleId: profile.id
             }
             await userService.createUser(table, user);
+            user = await userService.getUser(table, user_id);
             cb(null, user);
         }
     } catch (e) {

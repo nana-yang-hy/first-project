@@ -28,19 +28,19 @@ export class UserService {
             });
     }
 
-    public async getAllUsers(db_table: string) {
+    public async getAllUsers(db_table: string): Promise<UserDto> {
         try {
             let users = await this.db.query(`SELECT *
                                              FROM ${db_table}`);
             let result = UserService.mapAccountResult(users);
-            return result;
+            return result[0];
         } catch (e) {
-            return e;
+            throw e;
         }
 
     }
 
-    public async getUser(db_table: string, userId: string): Promise<UserDto[]> {
+    public async getUser(db_table: string, userId: string): Promise<UserDto> {
         try {
             await this.db.query('BEGIN');
             let user = await this.db.query(`SELECT *
@@ -48,15 +48,15 @@ export class UserService {
                                             WHERE user_id = $1`, [userId]);
             let result = UserService.mapAccountResult(user);
             await this.db.query('COMMIT');
-            console.log(result);
-            return result;
+            console.log(result[0]);
+            return result[0];
         } catch (e) {
             await this.db.query('ROLLBACK');
             throw e;
         }
     }
 
-    public async getUserByGoogleId(db_table: string, googleId: string): Promise<UserDto[]> {
+    public async getUserByGoogleId(db_table: string, googleId: string): Promise<UserDto> {
         try {
             await this.db.query('BEGIN');
             let user = await this.db.query(`SELECT *
@@ -64,7 +64,7 @@ export class UserService {
                                             WHERE google_id = $1`, [googleId]);
             let result = UserService.mapAccountResult(user);
             await this.db.query('COMMIT');
-            return result;
+            return result[0];
         } catch (e) {
             await this.db.query('ROLLBACK');
             throw e;

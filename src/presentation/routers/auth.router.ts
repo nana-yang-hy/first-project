@@ -2,12 +2,11 @@ import "../../middlewares/passport"
 import express from 'express';
 import {Request, Response} from "express";
 import {UserDto} from "../../data/model/user-dto";
-import {clientID, clientSecret} from '../../config/config-passport'
-import {AuthController} from "../../controllers/auth.controller";
+import {UserController} from "../../controllers/user.controller";
 
 const router = express.Router();
 const passport = require('passport');
-const authController = new AuthController();
+const userController = new UserController();
 const request = require('request');
 
 router.get('/login-failed', (req: Request, res: Response) => {
@@ -35,7 +34,7 @@ router.get("/google/redirect", passport.authenticate("google"), (req: Request, r
             personFields: 'birthdays',
         }
     };
-    request.get(options, (error: any, response: Response, body: string) => {
+    request.get(options, async (error: any, response: Response, body: string) => {
         if (error) {
             console.error(error);
             return res.status(500).send('Internal Server Error');
@@ -44,10 +43,9 @@ router.get("/google/redirect", passport.authenticate("google"), (req: Request, r
         let year = result.birthdays[0].date.year;
         let month = result.birthdays[0].date.month;
         let day = result.birthdays[0].date.day;
+        let birthday = `${year}-${month}-${day}`
 
-        console.log('----------------birthday:');
-        console.log(`${year}-${month}-${day}`);
-
+        await userController.users.updateBirthday(birthday, user, res);
         return res.status(200).json({
             msg:'redirect success'
         })
