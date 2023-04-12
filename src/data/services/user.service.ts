@@ -8,7 +8,7 @@ export class UserService {
     password: string
     port: number
 
-    constructor(user: string, host: string, password: string, port: number) {
+    constructor (user: string, host: string, password: string, port: number) {
         this.user = user,
             this.host = host,
             this.password = password,
@@ -28,12 +28,12 @@ export class UserService {
             });
     }
 
-    public async getAllUsers(db_table: string): Promise<UserDto> {
+    public async getAllUsers(db_table: string): Promise<UserDto[]> {
         try {
             let users = await this.db.query(`SELECT *
                                              FROM ${db_table}`);
             let result = UserService.mapAccountResult(users);
-            return result[0];
+            return result;
         } catch (e) {
             throw e;
         }
@@ -48,7 +48,6 @@ export class UserService {
                                             WHERE user_id = $1`, [userId]);
             let result = UserService.mapAccountResult(user);
             await this.db.query('COMMIT');
-            console.log(result[0]);
             return result[0];
         } catch (e) {
             await this.db.query('ROLLBACK');
