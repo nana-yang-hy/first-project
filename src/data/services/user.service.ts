@@ -48,7 +48,43 @@ export class UserService {
                                             WHERE user_id = $1`, [userId]);
             let result = UserService.mapAccountResult(user);
             await this.db.query('COMMIT');
+            console.log(result);
             return result;
+        } catch (e) {
+            await this.db.query('ROLLBACK');
+            throw e;
+        }
+    }
+
+    public async getUserByGoogleId(db_table: string, googleId: string): Promise<UserDto[]> {
+        try {
+            await this.db.query('BEGIN');
+            let user = await this.db.query(`SELECT *
+                                            FROM ${db_table}
+                                            WHERE google_id = $1`, [googleId]);
+            let result = UserService.mapAccountResult(user);
+            await this.db.query('COMMIT');
+            return result;
+        } catch (e) {
+            await this.db.query('ROLLBACK');
+            throw e;
+        }
+    }
+
+    public async findUserByGoogleId(db_table: string, googleId: string): Promise<boolean> {
+        try {
+            let result;
+            await this.db.query('BEGIN');
+            let foundUser = await this.db.query(`SELECT *
+                                            FROM ${db_table}
+                                            WHERE google_id = $1`, [googleId]);
+            result = foundUser.rowCount
+            if(!result){
+                return false;
+            }
+            await this.db.query('COMMIT');
+
+            return true;
         } catch (e) {
             await this.db.query('ROLLBACK');
             throw e;
@@ -76,8 +112,8 @@ export class UserService {
             ALTER TABLE ${db_table} ADD CONSTRAINT check_not_null CHECK (name <> '' and email <> '');
             `);
             let newUser = await this.db.query(`INSERT INTO ${db_table}
-                                               VALUES ($1,$2,$3,$4,$5);
-            `,[user.userId,user.name,user.email,user.hashedPassword,user.birthday]);
+                                               VALUES ($1,$2,$3,$4,$5,$6,$7,$8);
+            `,[user.userId,user.name,user.email,user.hashedPassword,user.birthday,user.accessToken,user.refreshToken,user.googleId]);
             return newUser.rowCount;
         } catch (e) {
             console.error(e)

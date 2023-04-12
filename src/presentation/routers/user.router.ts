@@ -8,11 +8,9 @@ const userController = new UserController();
 
 router.get('/', verifiedUser, userController.getHomePage.default);
 router.get('/all', superUser, userController.users.getAllUsers)
-router.get('/log-out', userController.users.logOut);
 router.get('/:user_id', verifiedUser, userController.users.getProfile)
 
 router.post('/',userController.users.create);
-router.post('/log-in',userController.users.logIn);
 
 router.patch('/:user_id', verifiedUser, userController.users.update);
 

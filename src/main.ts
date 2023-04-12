@@ -27,7 +27,7 @@ app.use(passport.session());
 app.use('/users', userRoute);
 app.use('/auth', authRoute);
 
-app.listen(3000, () => {
+app.listen(8080, () => {
     console.log('listening...')
 });
 

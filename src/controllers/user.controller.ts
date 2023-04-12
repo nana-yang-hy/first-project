@@ -99,6 +99,7 @@ export class UserController {
                 })
             }
         },
+
         getProfile: async (req: Request, res: Response) => {
             try {
                 let {user_id} = req.params;
@@ -115,6 +116,7 @@ export class UserController {
                 });
             }
         },
+
         getAllUsers: async (req: Request, res: Response) => {
             try {
                 let users = await this.userService.getAllUsers(this.table);

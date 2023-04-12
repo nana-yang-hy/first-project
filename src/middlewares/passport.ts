@@ -12,30 +12,31 @@ const bcrypt = require('bcrypt');
 const userService = new UserService(user, host, password, port);
 const table = 'schema1.users';
 
-passport.serializeUser((user: UserDto[], cb: AuthenticateCallback) => {
+passport.serializeUser((user: UserDto , cb: AuthenticateCallback) => {
     console.log('Serializing user...');
-    const userId = user[0].userId;
-    cb(null, userId)
+    cb(null, user.userId)
 });
 
-passport.deserializeUser(async (userId: string, cb: AuthenticateCallback) => {
+passport.deserializeUser(async (id: string, cb: AuthenticateCallback) => {
     console.log('Deserializing user...');
-    let user = await userService.getUser(table, userId);
-    console.log(user);
+    let user = await userService.getUser(table, id);
     cb(null, user);
 });
 
 passport.use(new GoogleStrategy({
     clientID: clientID,
     clientSecret: clientSecret,
-    callBackUrl: '/auth/google/redirect'
+    callbackURL: '/auth/google/redirect'
 }, async (accessToken: string, refreshToken: string, profile: Profile, cb: AuthenticateCallback) => {
     try {
-        let foundUser = await userService.getUser(table, profile.id);
+        console.log(profile.id);
+        let foundUser = await userService.findUserByGoogleId(table,profile.id);
         if (foundUser) {
             console.log('已註冊過使用者，無需再次註冊可直接登入');
-            let storeRefreshToken = await userService.updateUser(table, profile.id, {refresh_token: refreshToken});
-            cb(null, storeRefreshToken);
+            let user = await userService.getUserByGoogleId(table, profile.id);
+            await userService.updateUser(table, user[0].userId, {access_token: accessToken ,refresh_token: refreshToken});
+            user = await userService.getUser(table, user[0].userId);
+            cb(null, user[0]);
         } else {
             console.log('偵測到新用戶');
             let user_id = uuidv4();
@@ -44,13 +45,13 @@ passport.use(new GoogleStrategy({
                 name: profile.displayName,
                 email: profile.emails![0].value,
                 hashedPassword: '',
-                birthday: '0000-00-00',
-                accessToken,
-                refreshToken,
+                birthday: '2000-01-01',
+                accessToken:accessToken,
+                refreshToken:refreshToken,
                 googleId: profile.id
             }
-            let newUser = await userService.createUser(table, user);
-            cb(null, newUser);
+            await userService.createUser(table, user);
+            cb(null, user);
         }
     } catch (e) {
         console.error(e);
