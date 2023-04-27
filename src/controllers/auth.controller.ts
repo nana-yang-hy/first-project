@@ -33,9 +33,19 @@ export class AuthController {
 
                 if(!foundUser){
                     let result = JSON.parse(body);
-                    let year = result.birthdays[0].date.year;
-                    let month = result.birthdays[0].date.month;
-                    let day = result.birthdays[0].date.day;
+                    let number : number = 0;
+                    for(let i = 0; i < result.birthdays.length; i++){
+                        let type = result.birthdays[i].metadata.source.type;
+                        if(type === 'ACCOUNT') {
+                            number = i;
+                            break;
+                        }
+                        if(i == result.birthdays.length - 1 && type !== 'ACCOUNT')
+                        return res.status(400).send('Error with get birthday')
+                    }
+                    let year = result.birthdays[number].date.year;
+                    let month = result.birthdays[number].date.month;
+                    let day = result.birthdays[number].date.day;
                     user.birthday = `${year}-${month}-${day}`;
                     await this.userService.createUser(this.table, user);
                     let newUser = await this.userService.getUser(this.table, user.userId);
@@ -43,27 +53,41 @@ export class AuthController {
                     console.log(newUser);
                 }
 
-                return res.status(200).json({
-                    msg:'redirect success'
-                })
+                req.session!.isVerified = true;
+                return res.status(200).redirect('/users/');
             })
         },
 
         local: (req: Request, res: Response) => {
-            let {option} = req.body;
-            let user = req.user! as UserDto;
-            let userId = user.userId;
-            req.session!.isVerified = true;
+            try {
+                let {option} = req.body;
+                let user = req.user! as UserDto;
+                let userId = user.userId;
+                req.session!.isVerified = true;
 
-            if (option == 'super') {
-                req.session!.superUser = true;
+                if (option == 'super') {
+                    req.session!.superUser = true;
+
+                    return res.status(200).json({
+                        msg: 'super log in success',
+                        userId,
+                        code: 'L003'
+                    });
+                }
+
+                return res.status(200).json({
+                    msg: 'log in success',
+                    userId: userId,
+                    code: 'L001'
+                });
+            } catch (e) {
+                return res.status(500).json({
+                    msg: 'log in failed',
+                    errorMessage: e,
+                    code: 'L002'
+                });
             }
 
-            return res.status(200).json({
-                msg: 'log in success',
-                userId: userId,
-                code: 'L001'
-            });
         },
 
         logout: (req: Request, res: Response, next: NextFunction) => {
