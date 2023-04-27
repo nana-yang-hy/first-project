@@ -8,7 +8,7 @@ const passport = require('passport');
 const authController = new AuthController();
 
 router.get('/login-failed', (req: Request, res: Response) => {
-    return res.status(200).json({
+    return res.status(500).json({
         msg: 'log in failed',
         code: 'L002'
     })

@@ -19,13 +19,11 @@ export class UserController {
                 try {
                     let userId = req.session?.userId;
                     return res.status(200).json({
-                        msg: 'To go list',
+                        msg: 'Member System',
                         url: {
-                            calendar: '/calendar',
-                            map: '/map',
-                            profile: `/users/${userId}`
+                            profile: `/users/${userId}`,
+                            option: '/auth/log-out',
                         },
-                        option: 'log-out',
                         code: 'G001'
                     });
                 } catch (e) {
@@ -225,7 +223,7 @@ export class UserController {
                         code: 'D001'
                     });
                 } else if (!passwordCorrect) {
-                    return res.status(200).json({
+                    return res.status(401).json({
                         msg: 'incorrect password',
                         code: 'E003'
                     });

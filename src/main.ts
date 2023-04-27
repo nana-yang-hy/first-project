@@ -24,10 +24,10 @@ app.use(methodOverride('_method'));
 app.use(bodyParser.urlencoded({ extended: true }) );
 app.use(passport.initialize());
 app.use(passport.session());
-app.use('/users', userRoute);
-app.use('/auth', authRoute);
+app.use('/member-system/users', userRoute);
+app.use('/member-system/auth', authRoute);
 
-app.listen(8080, () => {
+app.listen(8081, () => {
     console.log('listening...')
 });
 
