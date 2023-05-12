@@ -217,6 +217,7 @@ export class UserController {
                 let currentPassword = await this.userService.currentPassword(this.table, user_id);
                 let passwordCorrect = await this.checkPassword(password, currentPassword);
                 if (passwordCorrect) {
+                    req.logout(function (err){if(err) throw err});
                     await this.userService.deleteUser(this.table, user_id);
                     return res.status(200).json({
                         msg: 'delete user success',
